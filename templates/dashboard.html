@@ -1,0 +1,293 @@
+
+{% extends "base.html" %}
+{% block title %}Dashboard | StockWise{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+  <div>
+    <div class="eyebrow">STOCKWISE ANALYTICS</div>
+    <h1 class="page-title">Welcome back, {{ username }}!</h1>
+    <p class="text-secondary mb-0">Your inventory and business performance at a glance.</p>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    <a href="{{ url_for('add_product') }}" class="btn btn-primary">＋ Add product</a>
+    <a href="{{ url_for('sales') }}" class="btn btn-success">↗ Record a sale</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="metric-card animate-in">
+      <div class="metric-label">Total products</div>
+      <div class="metric-value count-up" data-count="{{ product_count }}">0</div>
+      <div class="metric-note">Unique products listed</div>
+    </div>
+  </div>
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="metric-card animate-in">
+      <div class="metric-label">Units in stock</div>
+      <div class="metric-value count-up" data-count="{{ stock_units }}">0</div>
+      <div class="metric-note">Across all products</div>
+    </div>
+  </div>
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="metric-card animate-in">
+      <div class="metric-label">Stock cost value</div>
+      <div class="metric-value">Rs {{ "%.2f"|format(stock_value) }}</div>
+      <div class="metric-note">Quantity × cost price</div>
+    </div>
+  </div>
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="metric-card metric-highlight animate-in">
+      <div class="metric-label">Today's sales</div>
+      <div class="metric-value">Rs {{ "%.2f"|format(today_revenue) }}</div>
+      <div class="metric-note">Estimated profit: Rs {{ "%.2f"|format(today_profit) }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-12 col-xl-8">
+    <section class="panel-card h-100 animate-in">
+      <div class="panel-heading">
+        <div>
+          <h2 class="section-title">Sales activity</h2>
+          <p class="text-secondary small mb-0">Revenue from your latest recorded sales</p>
+        </div>
+        <span class="badge text-bg-light">Recent transactions</span>
+      </div>
+      <div style="position:relative;height:310px">
+        <canvas id="salesChart" aria-label="Recent sales revenue chart"></canvas>
+      </div>
+      {% if not recent_sales %}
+      <p class="text-secondary small text-center mt-3 mb-0">Record sales to populate this chart.</p>
+      {% endif %}
+    </section>
+  </div>
+  <div class="col-12 col-xl-4">
+    <section class="panel-card h-100 animate-in">
+      <div class="panel-heading">
+        <div>
+          <h2 class="section-title">Stock health</h2>
+          <p class="text-secondary small mb-0">Products by stock status</p>
+        </div>
+      </div>
+      <div style="position:relative;height:250px">
+        <canvas id="stockChart" aria-label="Inventory stock status chart"></canvas>
+      </div>
+      <div class="small text-secondary mt-3">
+        <div class="d-flex justify-content-between mb-2">
+          <span>Healthy stock</span><strong>{{ products | selectattr('quantity', 'gt', 0) | selectattr('quantity', 'gt', 0) | rejectattr('quantity', 'le', 0) | list | length }}</strong>
+        </div>
+        <div class="d-flex justify-content-between">
+          <span>Low or out of stock</span><strong>{{ low_stock | length }}</strong>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-12 col-xl-7">
+    <section class="panel-card h-100">
+      <div class="panel-heading">
+        <div>
+          <h2 class="section-title">Recent sales</h2>
+          <p class="text-secondary small mb-0">Your latest recorded transactions</p>
+        </div>
+        <a href="{{ url_for('sales') }}" class="btn btn-sm btn-light">View all</a>
+      </div>
+      {% if recent_sales %}
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead><tr><th>Receipt</th><th>Product</th><th>Units</th><th>Revenue</th></tr></thead>
+          <tbody>
+          {% for sale in recent_sales %}
+            <tr>
+              <td><a href="{{ url_for('receipt', sale_id=sale.id) }}">{{ sale.receipt_no }}</a></td>
+              <td>{{ sale.product_name }}</td>
+              <td>{{ sale.quantity }}</td>
+              <td>Rs {{ "%.2f"|format(sale.revenue) }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">↗</div>
+        <h3>No sales yet</h3>
+        <p>Record your first sale to see revenue and profit summaries here.</p>
+        <a href="{{ url_for('sales') }}" class="btn btn-primary">Record a sale</a>
+      </div>
+      {% endif %}
+    </section>
+  </div>
+
+  <div class="col-12 col-xl-5">
+    <section class="panel-card h-100">
+      <div class="panel-heading">
+        <div>
+          <h2 class="section-title">Stock alerts</h2>
+          <p class="text-secondary small mb-0">Products that may need replenishment</p>
+        </div>
+        <a href="{{ url_for('reports') }}" class="btn btn-sm btn-light">Reports</a>
+      </div>
+      {% if low_stock %}
+      <div class="list-group list-group-flush">
+        {% for product in low_stock %}
+        <div class="list-group-item px-0 d-flex align-items-center justify-content-between gap-3">
+          <div>
+            <div class="fw-semibold">{{ product.name }}</div>
+            <div class="small text-secondary">{{ product.sku }} · Reorder at {{ product.reorder_level }}</div>
+          </div>
+          <span class="badge {{ 'text-bg-danger' if product.quantity == 0 else 'text-bg-warning' }}">
+            {{ product.quantity }} left
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">✓</div>
+        <h3>Stock looks good</h3>
+        <p>No products are below their reorder threshold.</p>
+      </div>
+      {% endif %}
+    </section>
+  </div>
+</div>
+
+<div class="row g-3 mt-2">
+  <div class="col-12 col-md-4">
+    <a class="quick-link" href="{{ url_for('products') }}"><span>▦</span><div><strong>Manage products</strong><small>Search, filter and edit stock</small></div><b>→</b></a>
+  </div>
+  <div class="col-12 col-md-4">
+    <a class="quick-link" href="{{ url_for('reports') }}"><span>▤</span><div><strong>Business reports</strong><small>Sales, profit and stock history</small></div><b>→</b></a>
+  </div>
+  <div class="col-12 col-md-4">
+    <a class="quick-link" href="{{ url_for('ai_insights') }}"><span>✧</span><div><strong>Stock insights</strong><small>Recommendations and alerts</small></div><b>→</b></a>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // Animate the product and unit counts.
+  document.querySelectorAll('.count-up').forEach(function (el) {
+    const target = Number(el.dataset.count) || 0;
+    const duration = 850;
+    const start = performance.now();
+
+    function step(now) {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.round(target * eased).toLocaleString();
+      if (progress < 1) requestAnimationFrame(step);
+    }
+
+    requestAnimationFrame(step);
+  });
+
+  const salesLabels = [
+    {% for sale in recent_sales | reverse %}
+      {{ sale.sold_at.strftime('%d %b %H:%M') | tojson }}{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  const salesValues = [
+    {% for sale in recent_sales | reverse %}
+      {{ sale.revenue | tojson }}{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ];
+  
+  const profitValues = [
+    {% for sale in recent_sales | reverse %}
+      {{ sale.profit | tojson }}{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  const salesCanvas = document.getElementById('salesChart');
+  if (salesCanvas) {
+    new Chart(salesCanvas, {
+      type: 'line',
+      data: {
+        labels: salesLabels,
+        datasets: [
+          {
+            label: 'Revenue (Rs)',
+            data: salesValues,
+            borderColor: '#4f63f6',
+            backgroundColor: 'rgba(79, 99, 246, 0.10)',
+            tension: 0.3,
+            pointRadius: 3,
+            fill: false
+          },
+          {
+            label: 'Profit / Loss (Rs)',
+            data: profitValues,
+            borderColor: '#16a34a',
+            backgroundColor: 'rgba(22, 163, 74, 0.12)',
+            tension: 0.3,
+            pointRadius: 4,
+            fill: false,
+            segment: {
+              borderColor: ctx =>
+                ctx.p1.parsed.y < 0 ? '#dc2626' : '#16a34a'
+            },
+            pointBackgroundColor: ctx =>
+              ctx.raw < 0 ? '#dc2626' : '#16a34a'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 1000, easing: 'easeOutQuart' },
+        plugins: { legend: { display: false } },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: value => 'Rs ' + value
+            },
+            title: {
+              display: true,
+              text: 'Amount (Rs)'
+            }
+          },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  const stockCanvas = document.getElementById('stockChart');
+  if (stockCanvas) {
+    new Chart(stockCanvas, {
+      type: 'doughnut',
+      data: {
+        labels: ['Healthy stock', 'Low stock', 'Out of stock'],
+        datasets: [{
+          data: [
+            {{ products | rejectattr('quantity', 'le', 0) | rejectattr('quantity', 'le', 0) | selectattr('quantity', 'gt', 0) | selectattr('quantity', 'gt', 0) | list | length }},
+            {{ products | selectattr('quantity', 'gt', 0) | selectattr('quantity', 'le', 5) | list | length }},
+            {{ products | selectattr('quantity', 'le', 0) | list | length }}
+          ],
+          backgroundColor: ['#27c4d9', '#f5b942', '#ef5b67'],
+          borderWidth: 0,
+          hoverOffset: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '70%',
+        animation: { animateRotate: true, duration: 1000 },
+        plugins: { legend: { position: 'bottom' } }
+      }
+    });
+  }
+});
+</script>
+{% endblock %}

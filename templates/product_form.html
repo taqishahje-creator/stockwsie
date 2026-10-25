@@ -1,0 +1,108 @@
+
+{% extends "base.html" %}
+
+{% block title %}
+{{ 'Edit Product' if product else 'Add Product' }} | StockWise
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <p class="eyebrow">INVENTORY MANAGEMENT</p>
+        <h1 class="page-title">
+            {{ 'Edit Product' if product else 'Add New Product' }}
+        </h1>
+        <p class="text-secondary">
+            {{ 'Update the product information below.' if product else 'Add a product to your inventory.' }}
+        </p>
+    </div>
+    <a href="{{ url_for('products') }}" class="btn btn-outline-secondary">
+        Back to Products
+    </a>
+</div>
+
+<div class="form-panel panel-card">
+    <form method="POST" enctype="multipart/form-data">
+       <input type="hidden" name="csrf_token" value="{{ jwt_csrf_token }}">
+        <div class="row g-4">
+            <div class="col-md-6">
+                <label for="name" class="form-label">Product Name *</label>
+                <input type="text" id="name" name="name" class="form-control"
+                       value="{{ product.name if product else '' }}"
+                       placeholder="e.g. Wireless Mouse" required>
+            </div>
+
+            <div class="col-md-6">
+                <label for="sku" class="form-label">SKU / Product Code *</label>
+                <input type="text" id="sku" name="sku" class="form-control"
+                       value="{{ product.sku if product else '' }}"
+                       placeholder="e.g. WM-001" required>
+            </div>
+
+            <div class="col-md-6">
+                <label for="category" class="form-label">Category</label>
+                <input type="text" id="category" name="category" class="form-control"
+                       value="{{ product.category if product else '' }}"
+                       placeholder="e.g. Electronics">
+            </div>
+
+            <div class="col-md-6">
+                <label for="quantity" class="form-label">Quantity in Stock *</label>
+                <input type="number" id="quantity" name="quantity" class="form-control"
+                       min="0" value="{{ product.quantity if product else 0 }}" required>
+            </div>
+
+            <div class="col-md-6">
+                <label for="cost_price" class="form-label">Cost Price (Rs.) *</label>
+                <input type="number" id="cost_price" name="cost_price"
+                       class="form-control" min="0" step="0.01"
+                       value="{{ product.cost_price if product else '' }}"
+                       placeholder="0.00" required>
+            </div>
+
+            <div class="col-md-6">
+                <label for="selling_price" class="form-label">Selling Price (Rs.) *</label>
+                <input type="number" id="selling_price" name="selling_price"
+                       class="form-control" min="0" step="0.01"
+                       value="{{ product.selling_price if product else '' }}"
+                       placeholder="0.00" required>
+            </div>
+
+            <div class="col-md-6">
+                <label for="reorder_level" class="form-label">Low Stock Alert Level</label>
+                <input type="number" id="reorder_level" name="reorder_level"
+                       class="form-control" min="0"
+                       value="{{ product.reorder_level if product else 5 }}">
+                <div class="form-text">Show a low-stock warning when stock reaches this level.</div>
+            </div>
+
+            <div class="col-md-6">
+                <label for="image" class="form-label">Product Image</label>
+                <input type="file" id="image" name="image" class="form-control"
+                       accept=".png,.jpg,.jpeg,.webp">
+                <div class="form-text">Optional. PNG, JPG, JPEG, or WEBP.</div>
+                {% if product and product.image %}
+                <div class="mt-2">
+                    Current image:
+                    <img src="{{ url_for('static', filename='uploads/' ~ product.image) }}"
+                         alt="Current product image" class="product-thumbnail">
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="col-12">
+                <label for="description" class="form-label">Description</label>
+                <textarea id="description" name="description" class="form-control"
+                          rows="4" placeholder="Optional product details">{{ product.description if product and product.description else '' }}</textarea>
+            </div>
+
+            <div class="col-12 d-flex gap-2 justify-content-end">
+                <a href="{{ url_for('products') }}" class="btn btn-light">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    {{ 'Save Changes' if product else 'Add Product' }}
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

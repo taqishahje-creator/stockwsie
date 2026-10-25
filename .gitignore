@@ -1,0 +1,42 @@
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+backups/
+*.sql
+*.dump
+*.sqlite3
+*.log
+
+# Local backup copies
+*.bak
+*.backup
+*.before-*
+*.save
+*.save.*
+templates.before-*/
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Python cache and virtual environments
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# Database backups and logs
+backups/
+*.sql
+*.dump
+*.sqlite3
+*.log

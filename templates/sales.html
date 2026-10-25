@@ -1,0 +1,180 @@
+ 
+{% extends "base.html" %}
+
+{% block title %}Sales | StockWise{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <p class="eyebrow">REVENUE & TRANSACTIONS</p>
+        <h1 class="page-title">Sales Center</h1>
+        <p class="text-secondary">Record sales, monitor profitability, and access customer receipts.</p>
+    </div>
+    <a href="{{ url_for('reports') }}" class="btn btn-outline-primary">
+        View Reports →
+    </a>
+</div>
+
+{% set total_revenue = sales|sum(attribute='revenue') %}
+{% set total_profit = sales|sum(attribute='profit') %}
+{% set total_units = sales|sum(attribute='quantity') %}
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-xl-3">
+        <div class="panel-card sw-sales-stat">
+            <div class="sw-sales-stat-icon">💰</div>
+            <p class="text-secondary small mb-1">Revenue in Listed Sales</p>
+            <h3>Rs. {{ "%.2f"|format(total_revenue) }}</h3>
+        </div>
+    </div>
+    <div class="col-6 col-xl-3">
+        <div class="panel-card sw-sales-stat">
+            <div class="sw-sales-stat-icon">📈</div>
+            <p class="text-secondary small mb-1">Profit in Listed Sales</p>
+            <h3 class="text-success">Rs. {{ "%.2f"|format(total_profit) }}</h3>
+        </div>
+    </div>
+    <div class="col-6 col-xl-3">
+        <div class="panel-card sw-sales-stat">
+            <div class="sw-sales-stat-icon">🧾</div>
+            <p class="text-secondary small mb-1">Transactions Listed</p>
+            <h3>{{ sales|length }}</h3>
+        </div>
+    </div>
+    <div class="col-6 col-xl-3">
+        <div class="panel-card sw-sales-stat">
+            <div class="sw-sales-stat-icon">📦</div>
+            <p class="text-secondary small mb-1">Units Sold in Listed Sales</p>
+            <h3>{{ total_units }}</h3>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="panel-card sw-sale-form-card">
+            <div class="sw-sale-form-heading">
+                <span class="sw-sale-kicker">NEW TRANSACTION</span>
+                <h2 class="section-title mt-2 mb-1">Record a Sale</h2>
+                <p class="text-secondary small mb-0">Stock is managed by your existing sales handler.</p>
+            </div>
+
+            <form method="POST" action="{{ url_for('sales') }}" class="mt-4">
+                <input type="hidden" name="csrf_token" value="{{ jwt_csrf_token }}">
+
+                <div class="mb-3">
+                    <label for="product_id" class="form-label">Select Product *</label>
+                    <select id="product_id" name="product_id" class="form-select" required>
+                        <option value="">Choose a product</option>
+                        {% for product in products %}
+                        {% if product.quantity > 0 %}
+                        <option value="{{ product.id }}">
+                            {{ product.name }} — {{ product.quantity }} available
+                            (Rs. {{ "%.2f"|format(product.selling_price) }})
+                        </option>
+                        {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="quantity" class="form-label">Quantity Sold *</label>
+                    <input type="number" id="quantity" name="quantity"
+                           class="form-control" min="1" value="1" required>
+                    <div class="form-text">Cannot exceed available stock.</div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="unit_price" class="form-label">Unit Selling Price (Rs.)</label>
+                    <input type="number" id="unit_price" name="unit_price"
+                           class="form-control" min="0" step="0.01"
+                           placeholder="Use product's default price">
+                    <div class="form-text">Optional. Leave blank to use the product price.</div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-2">
+                    + Record Sale
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="panel-card">
+            <div class="panel-heading">
+                <div>
+                    <p class="eyebrow mb-1">SALES HISTORY</p>
+                    <h2 class="section-title mb-0">Recent Transactions</h2>
+                </div>
+                <span class="badge bg-primary-subtle text-primary">
+                    {{ sales|length }} listed
+                </span>
+            </div>
+
+            <div class="table-responsive sw-sales-table-wrap">
+                <table class="table align-middle sw-sales-table">
+                    <thead>
+                        <tr>
+                            <th>Receipt</th>
+                            <th>Product</th>
+                            <th>Qty</th>
+                            <th>Total</th>
+                            <th>Profit</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sale in sales %}
+                        <tr>
+                            <td>
+                                <a class="sw-receipt-link"
+                                   href="{{ url_for('receipt', sale_id=sale.id) }}">
+                                    {{ sale.receipt_no }}
+                                </a>
+                            </td>
+                            <td>
+                                <span class="sw-sale-product">{{ sale.product_name }}</span>
+                            </td>
+                            <td>
+                                <span class="sw-quantity-pill">{{ sale.quantity }}</span>
+                            </td>
+                            <td class="sw-revenue-cell">
+                                Rs. {{ "%.2f"|format(sale.revenue) }}
+                            </td>
+                            <td>
+                                <span class="{% if sale.profit >= 0 %}sw-profit-positive{% else %}sw-profit-negative{% endif %}">
+                                    Rs. {{ "%.2f"|format(sale.profit) }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="sw-sale-date">
+                                    {{ sale.sold_at.strftime('%d %b %Y') }}
+                                </span>
+                                <small class="d-block text-secondary">
+                                    {{ sale.sold_at.strftime('%I:%M %p') }}
+                                </small>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6">
+                                <div class="empty-state py-5">
+                                    <div class="empty-icon">🧾</div>
+                                    <h3>No sales recorded yet</h3>
+                                    <p>Choose an available product to record your first sale.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="sw-sales-footer">
+                <span>Showing transactions provided by your existing Sales page.</span>
+                <a href="{{ url_for('products') }}">Manage products →</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

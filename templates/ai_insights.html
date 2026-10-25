@@ -1,0 +1,568 @@
+
+{% extends "base.html" %}
+
+{% block title %}AI Command Center | StockWise{% endblock %}
+
+{% block content %}
+{% set healthy_count = namespace(total=0) %}
+{% for p in products %}
+    {% if p.quantity > p.reorder_level and p.quantity > 0 %}
+        {% set healthy_count.total = healthy_count.total + 1 %}
+    {% endif %}
+{% endfor %}
+
+<div class="ai-dashboard">
+
+    <!-- Header -->
+    <section class="ai-topbar">
+        <div>
+            <p class="ai-eyebrow">STOCKWISE INTELLIGENCE / COMMAND CENTER</p>
+            <h1>AI Insights <span>✦</span></h1>
+            <p class="ai-subtitle">
+                Your inventory, sales performance, and AI-powered decisions in one place.
+            </p>
+        </div>
+        <div class="ai-live-pill"><span></span> LOCAL AI · QWEN</div>
+    </section>
+
+    <!-- Welcome banner -->
+    <section class="ai-welcome">
+        <div class="ai-welcome-copy">
+            <p class="ai-eyebrow">EXECUTIVE OVERVIEW</p>
+            <h2>Your inventory at a glance.</h2>
+            <p>
+                Review business performance, catch stock risks early, and ask your
+                local AI analyst for practical next steps.
+            </p>
+            <a href="{{ url_for('products') }}" class="ai-action-link">
+                Manage inventory <span>↗</span>
+            </a>
+        </div>
+
+        <div class="ai-orb" aria-hidden="true">
+            <div class="ai-orb-core">✦</div>
+            <div class="ai-orb-ring ai-orb-ring-one"></div>
+            <div class="ai-orb-ring ai-orb-ring-two"></div>
+        </div>
+    </section>
+
+    <!-- Executive metrics -->
+    <section class="ai-metric-grid">
+        <article class="ai-metric">
+            <div class="ai-metric-top">
+                <span>PRODUCTS</span>
+                <span class="ai-metric-icon">▤</span>
+            </div>
+            <div class="ai-metric-value">{{ products|length }}</div>
+            <div class="ai-metric-note">Distinct inventory items</div>
+        </article>
+
+        <article class="ai-metric">
+            <div class="ai-metric-top">
+                <span>UNITS IN STOCK</span>
+                <span class="ai-metric-icon cyan">◈</span>
+            </div>
+            <div class="ai-metric-value">
+                {{ products|sum(attribute='quantity') }}
+            </div>
+            <div class="ai-metric-note">Recorded available units</div>
+        </article>
+
+        <article class="ai-metric">
+            <div class="ai-metric-top">
+                <span>SALES REVENUE</span>
+                <span class="ai-metric-icon green">↗</span>
+            </div>
+            <div class="ai-metric-value">
+                {{ "%.2f"|format(total_revenue) }}
+            </div>
+            <div class="ai-metric-note">All recorded transactions</div>
+        </article>
+
+        <article class="ai-metric">
+            <div class="ai-metric-top">
+                <span>RECORDED PROFIT</span>
+                <span class="ai-metric-icon purple">✧</span>
+            </div>
+            <div class="ai-metric-value">
+                {{ "%.2f"|format(total_profit) }}
+            </div>
+            <div class="ai-metric-note">Before other business expenses</div>
+        </article>
+    </section>
+
+    <!-- Charts -->
+    <section class="ai-content-grid">
+
+        <article class="ai-panel">
+            <div class="ai-panel-heading">
+                <div>
+                    <p class="ai-eyebrow">BUSINESS PERFORMANCE</p>
+                    <h2>Best-selling products</h2>
+                    <p class="ai-panel-subtitle">
+                        Ranked by total units sold in recorded transactions.
+                    </p>
+                </div>
+                <span class="ai-panel-tag">ALL-TIME</span>
+            </div>
+
+            <div class="ai-chart-wrap">
+                <canvas id="aiSalesChart"
+                        aria-label="Best-selling products by units sold"></canvas>
+                <div id="aiSalesEmpty" class="ai-chart-empty" hidden>
+                    No sales have been recorded yet. Record sales to see product
+                    demand here.
+                </div>
+            </div>
+        </article>
+
+        <article class="ai-panel">
+            <div class="ai-panel-heading">
+                <div>
+                    <p class="ai-eyebrow">STOCK DISTRIBUTION</p>
+                    <h2>Inventory health</h2>
+                    <p class="ai-panel-subtitle">
+                        Current products grouped by stock status.
+                    </p>
+                </div>
+            </div>
+
+            <div class="ai-donut-wrap">
+                <canvas id="aiStockChart"
+                        aria-label="Inventory health distribution"></canvas>
+                <div id="aiStockEmpty" class="ai-chart-empty" hidden>
+                    Add products to see inventory health.
+                </div>
+            </div>
+
+            <div class="ai-legend">
+                <div>
+                    <span class="ai-legend-dot good"></span>
+                    Healthy stock
+                    <strong>{{ healthy_count.total }}</strong>
+                </div>
+                <div>
+                    <span class="ai-legend-dot warn"></span>
+                    Low stock
+                    <strong>
+                        {{ low_stock|length - out_of_stock|length }}
+                    </strong>
+                </div>
+                <div>
+                    <span class="ai-legend-dot danger"></span>
+                    Out of stock
+                    <strong>{{ out_of_stock|length }}</strong>
+                </div>
+            </div>
+        </article>
+    </section>
+
+    <!-- Recommendations -->
+    <section class="ai-panel ai-recommendations">
+        <div class="ai-panel-heading">
+            <div>
+                <p class="ai-eyebrow">DECISION SUPPORT</p>
+                <h2>Prioritized recommendations</h2>
+                <p class="ai-panel-subtitle">
+                    Review stock risks and suggestions based on your recorded data.
+                </p>
+            </div>
+            <span class="ai-panel-tag">
+                {{ recommendations|length }} INSIGHT(S)
+            </span>
+        </div>
+
+        {% if out_of_stock %}
+        <div class="ai-priority-item priority-critical">
+            <div class="ai-priority-icon">!</div>
+            <div class="ai-priority-body">
+                <div class="ai-priority-label">PRIORITY 1 · URGENT</div>
+                <h3>Out-of-stock products need attention</h3>
+                <p>{{ out_of_stock|map(attribute='name')|join(', ') }}</p>
+                <a href="{{ url_for('products') }}">Review products ↗</a>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if low_stock %}
+        <div class="ai-priority-item priority-warning">
+            <div class="ai-priority-icon">↗</div>
+            <div class="ai-priority-body">
+                <div class="ai-priority-label">PRIORITY 2 · RESTOCK</div>
+                <h3>Review low-stock levels</h3>
+                <p>
+                    {% for p in low_stock[:8] %}
+                        {{ p.name }} ({{ p.quantity }} left; threshold
+                        {{ p.reorder_level }}){% if not loop.last %} · {% endif %}
+                    {% endfor %}
+                </p>
+                <a href="{{ url_for('products') }}">Plan restocking ↗</a>
+            </div>
+        </div>
+        {% endif %}
+
+        {% for recommendation in recommendations %}
+        <div class="ai-priority-item priority-ai">
+            <div class="ai-priority-icon">✦</div>
+            <div class="ai-priority-body">
+                <div class="ai-priority-label">AI ANALYSIS</div>
+                <p class="ai-recommendation-text">{{ recommendation }}</p>
+            </div>
+        </div>
+        {% else %}
+        <div class="ai-chart-empty">
+            No recommendations are available yet.
+        </div>
+        {% endfor %}
+
+        {% if not products %}
+        <div class="ai-empty-state">
+            <span>◈</span>
+            <h3>Your insights start with inventory</h3>
+            <p>Add your first product to unlock stock analysis and recommendations.</p>
+            <a href="{{ url_for('products') }}" class="btn btn-primary">
+                View products
+            </a>
+        </div>
+        {% endif %}
+    </section>
+
+    <!-- AI chat -->
+    <section class="ai-panel ai-chat-panel" id="ai-analyst">
+        <div class="ai-panel-heading">
+            <div>
+                <p class="ai-eyebrow">ASK YOUR DATA</p>
+                <h2>Chat with your AI analyst</h2>
+                <p class="ai-panel-subtitle">
+                    Ask questions about stock, sales, profit, and restocking.
+                    Answers use your recorded data.
+                </p>
+            </div>
+            <div class="ai-chat-avatar">✦</div>
+        </div>
+
+        <div class="ai-suggestions">
+            <button type="button" class="ai-suggestion"
+                    data-question="Which products need restocking first?">
+                Which products need restocking?
+            </button>
+            <button type="button" class="ai-suggestion"
+                    data-question="Which products have sold the most units?">
+                What sells the most?
+            </button>
+            <button type="button" class="ai-suggestion"
+                    data-question="Summarize my recorded revenue and profit.">
+                Summarize revenue and profit
+            </button>
+        </div>
+
+        <div class="ai-chat-messages" id="aiChatMessages" aria-live="polite">
+            <div class="ai-chat-message assistant">
+                <div class="ai-message-avatar">✦</div>
+                <div class="ai-message-bubble">
+                    <strong>StockWise AI</strong>
+                    <p>
+                        Hi! I can help interpret your inventory and sales records.
+                        What would you like to know?
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <form id="aiChatForm" class="ai-chat-form">
+            <input type="hidden" id="aiCsrfToken" value="{{ jwt_csrf_token }}">
+
+            <label for="aiQuestion" class="visually-hidden">
+                Ask StockWise AI a question
+            </label>
+
+            <input id="aiQuestion"
+                   type="text"
+                   maxlength="500"
+                   placeholder="Ask about stock, sales, profit..."
+                   autocomplete="off"
+                   required>
+
+            <button id="aiAskButton" type="submit">
+                <span>Ask AI</span> <span>↑</span>
+            </button>
+        </form>
+
+        <p class="ai-chat-footnote">
+            Powered by your local Qwen model · Verify important business decisions.
+        </p>
+    </section>
+
+    <!-- Quick actions -->
+    <section class="ai-bottom-actions">
+        <a href="{{ url_for('products') }}" class="ai-secondary-action">
+            ▤
+            <span>
+                <strong>Manage products</strong>
+                <small>Review quantities and reorder levels</small>
+            </span>
+            <b>↗</b>
+        </a>
+
+        <a href="{{ url_for('reports') }}" class="ai-secondary-action">
+            ▥
+            <span>
+                <strong>Open reports</strong>
+                <small>Review recorded sales transactions</small>
+            </span>
+            <b>↗</b>
+        </a>
+
+        <a href="{{ url_for('sales') }}" class="ai-secondary-action">
+            ＋
+            <span>
+                <strong>Record a sale</strong>
+                <small>Keep demand analysis up to date</small>
+            </span>
+            <b>↗</b>
+        </a>
+    </section>
+
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+(() => {
+    "use strict";
+
+    const chartText = "#9aa8c7";
+    const chartGrid = "rgba(155, 171, 210, 0.12)";
+
+    /*
+     * Calculate actual units sold from Sale records related to each product.
+     * Each Sale contributes its quantity, not merely one sale entry.
+     */
+    const salesProducts = [
+        {% for p in products %}
+        {
+            name: {{ p.name|tojson }},
+            units: {{ p.sales|sum(attribute='quantity') }}
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ].sort((a, b) => b.units - a.units).slice(0, 7);
+
+    const productNames = {{ products|map(attribute='name')|list|tojson }};
+    const lowNames = {{ low_stock|map(attribute='name')|list|tojson }};
+    const outNames = {{ out_of_stock|map(attribute='name')|list|tojson }};
+
+    const salesCanvas = document.getElementById("aiSalesChart");
+    const stockCanvas = document.getElementById("aiStockChart");
+
+    // Best-selling products chart
+    if (salesCanvas) {
+        const productsWithSales = salesProducts.filter(p => p.units > 0);
+
+        if (productsWithSales.length && window.Chart) {
+            new Chart(salesCanvas, {
+                type: "bar",
+                data: {
+                    labels: productsWithSales.map(p => p.name),
+                    datasets: [{
+                        label: "Units sold",
+                        data: productsWithSales.map(p => p.units),
+                        backgroundColor: [
+                            "#8b7cff",
+                            "#5d9bff",
+                            "#42d9d0",
+                            "#a18bff",
+                            "#6585dd",
+                            "#4bc5a8",
+                            "#7e8cae"
+                        ],
+                        borderRadius: 7,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    indexAxis: "y",
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: "#111a2d",
+                            titleColor: "#fff",
+                            bodyColor: "#cbd5eb"
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: chartText,
+                                precision: 0
+                            },
+                            grid: { color: chartGrid }
+                        },
+                        y: {
+                            ticks: { color: chartText },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        } else {
+            salesCanvas.hidden = true;
+            document.getElementById("aiSalesEmpty").hidden = false;
+        }
+    }
+
+    // Inventory health chart
+    if (stockCanvas) {
+        const outCount = outNames.length;
+        const lowCount = lowNames.filter(name => !outNames.includes(name)).length;
+        const healthyCount = Math.max(
+            0,
+            productNames.length - lowCount - outCount
+        );
+
+        if (productNames.length && window.Chart) {
+            new Chart(stockCanvas, {
+                type: "doughnut",
+                data: {
+                    labels: ["Healthy stock", "Low stock", "Out of stock"],
+                    datasets: [{
+                        data: [healthyCount, lowCount, outCount],
+                        backgroundColor: ["#36c9a0", "#f4b860", "#f16d83"],
+                        borderColor: "#151d31",
+                        borderWidth: 5,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: "72%",
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: "#111a2d",
+                            titleColor: "#fff",
+                            bodyColor: "#cbd5eb"
+                        }
+                    }
+                }
+            });
+        } else {
+            stockCanvas.hidden = true;
+            document.getElementById("aiStockEmpty").hidden = false;
+        }
+    }
+
+    // If the Chart.js CDN is unavailable, show a useful message.
+    if (!window.Chart) {
+        document.getElementById("aiSalesChart").hidden = true;
+        document.getElementById("aiStockChart").hidden = true;
+        document.getElementById("aiSalesEmpty").hidden = false;
+        document.getElementById("aiStockEmpty").hidden = false;
+        document.getElementById("aiSalesEmpty").textContent =
+            "Charts could not load. Check your internet connection and refresh.";
+        document.getElementById("aiStockEmpty").textContent =
+            "Charts could not load. Check your internet connection and refresh.";
+    }
+
+    // AI chat
+    const form = document.getElementById("aiChatForm");
+    const input = document.getElementById("aiQuestion");
+    const messages = document.getElementById("aiChatMessages");
+    const askButton = document.getElementById("aiAskButton");
+
+    function addMessage(role, text) {
+        const row = document.createElement("div");
+        row.className = `ai-chat-message ${role}`;
+
+        const avatar = document.createElement("div");
+        avatar.className = "ai-message-avatar";
+        avatar.textContent = role === "assistant" ? "✦" : "You";
+
+        const bubble = document.createElement("div");
+        bubble.className = "ai-message-bubble";
+
+        const label = document.createElement("strong");
+        label.textContent = role === "assistant" ? "StockWise AI" : "You";
+
+        const paragraph = document.createElement("p");
+        paragraph.textContent = text;
+
+        bubble.append(label, paragraph);
+        row.append(avatar, bubble);
+        messages.appendChild(row);
+        messages.scrollTop = messages.scrollHeight;
+
+        return row;
+    }
+
+    async function askQuestion(question) {
+        if (!question || askButton.disabled) return;
+
+        addMessage("user", question);
+        input.value = "";
+        askButton.disabled = true;
+        askButton.querySelector("span:first-child").textContent = "Thinking…";
+
+        const loadingRow = addMessage(
+            "assistant",
+            "Reviewing your recorded inventory and sales data…"
+        );
+
+        try {
+            const response = await fetch(
+                {{ url_for("ai_ask")|tojson }},
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN":
+                            document.getElementById("aiCsrfToken").value
+                    },
+                    body: JSON.stringify({ question })
+                }
+            );
+
+            const data = await response.json();
+            loadingRow.remove();
+
+            if (!response.ok) {
+                addMessage(
+                    "assistant",
+                    data.error || "The request failed. Please try again."
+                );
+            } else {
+                addMessage(
+                    "assistant",
+                    data.answer || "The AI returned an empty answer."
+                );
+            }
+        } catch (error) {
+            loadingRow.remove();
+            addMessage(
+                "assistant",
+                "Could not reach the AI service. Please try again in a moment."
+            );
+        } finally {
+            askButton.disabled = false;
+            askButton.querySelector("span:first-child").textContent = "Ask AI";
+            input.focus();
+        }
+    }
+
+    form.addEventListener("submit", event => {
+        event.preventDefault();
+        askQuestion(input.value.trim());
+    });
+
+    document.querySelectorAll(".ai-suggestion").forEach(button => {
+        button.addEventListener("click", () => {
+            askQuestion(button.dataset.question);
+        });
+    });
+})();
+</script>
+{% endblock %}

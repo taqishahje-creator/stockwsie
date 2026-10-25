@@ -1,0 +1,136 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111a35">
+
+  <title>{% block title %}StockWise{% endblock %}</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+</head>
+
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark sw-navbar sticky-top">
+  <div class="container-fluid px-lg-4">
+
+    <a class="navbar-brand fw-bold"
+       href="{{ url_for('dashboard') if session.get('user_id') else url_for('index') }}">
+      <span class="sw-logo">S</span>
+      <span>StockWise</span>
+    </a>
+
+    <button class="navbar-toggler" type="button"
+            data-bs-toggle="collapse" data-bs-target="#swNav"
+            aria-controls="swNav" aria-expanded="false"
+            aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="swNav">
+      {% if session.get('user_id') %}
+
+      <div class="navbar-nav me-auto ms-lg-4 sw-nav-links">
+
+        <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}"
+           {% if request.endpoint == 'dashboard' %}aria-current="page"{% endif %}
+           href="{{ url_for('dashboard') }}">
+          <span class="sw-nav-icon">⌂</span> Dashboard
+        </a>
+
+        <a class="nav-link {% if request.endpoint == 'products' %}active{% endif %}"
+           {% if request.endpoint == 'products' %}aria-current="page"{% endif %}
+           href="{{ url_for('products') }}">
+          <span class="sw-nav-icon">▤</span> Products
+        </a>
+
+        <a class="nav-link {% if request.endpoint == 'add_product' or request.endpoint == 'edit_product' %}active{% endif %}"
+           {% if request.endpoint == 'add_product' or request.endpoint == 'edit_product' %}aria-current="page"{% endif %}
+           href="{{ url_for('add_product') }}">
+          <span class="sw-nav-icon">＋</span> Add Product
+        </a>
+
+        <a class="nav-link {% if request.endpoint == 'sales' or request.endpoint == 'receipt' %}active{% endif %}"
+           {% if request.endpoint == 'sales' or request.endpoint == 'receipt' %}aria-current="page"{% endif %}
+           href="{{ url_for('sales') }}">
+          <span class="sw-nav-icon">↗</span> Sales
+        </a>
+
+        <a class="nav-link {% if request.endpoint == 'reports' %}active{% endif %}"
+           {% if request.endpoint == 'reports' %}aria-current="page"{% endif %}
+           href="{{ url_for('reports') }}">
+          <span class="sw-nav-icon">▥</span> Reports
+        </a>
+
+        <a class="nav-link {% if request.endpoint == 'ai_insights' %}active{% endif %}"
+           {% if request.endpoint == 'ai_insights' %}aria-current="page"{% endif %}
+           href="{{ url_for('ai_insights') }}">
+          <span class="sw-nav-icon">✧</span> AI Insights
+        </a>
+
+      </div>
+
+      <div class="sw-user-area d-flex align-items-center gap-3 py-3 py-lg-0">
+        <div class="sw-user-avatar">
+          {{ (session.get('username') or 'U')[:1]|upper }}
+        </div>
+
+        <div class="sw-user-details">
+          <span class="sw-user-label">SIGNED IN AS</span>
+          <strong>{{ session.get('username') }}</strong>
+        </div>
+
+        <form method="post" action="{{ url_for('logout') }}" class="ms-lg-1">
+          <input type="hidden" name="csrf_token" value="{{ jwt_csrf_token }}">
+          <button class="btn btn-outline-light btn-sm sw-logout-btn" type="submit">
+            Log out
+          </button>
+        </form>
+      </div>
+
+      {% else %}
+
+      <div class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
+        <a class="nav-link {% if request.endpoint == 'login' %}active{% endif %}"
+           href="{{ url_for('login') }}">Log in</a>
+        <a class="btn btn-success btn-sm ms-lg-2" href="{{ url_for('signup') }}">
+          Get started <span aria-hidden="true">→</span>
+        </a>
+      </div>
+
+      {% endif %}
+    </div>
+  </div>
+</nav>
+
+<main class="container-fluid px-3 px-lg-4 py-4">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+      <div class="alert {{ 'alert-success' if category == 'success' else 'alert-danger' }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="sw-footer py-4 mt-5">
+  <div class="container-fluid px-lg-4 d-flex flex-wrap justify-content-between gap-2">
+    <span>© 2026 StockWise Inventory Management</span>
+    <span>Inventory <span aria-hidden="true">·</span> Sales <span aria-hidden="true">·</span> Insights</span>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
