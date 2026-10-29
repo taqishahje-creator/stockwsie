@@ -95,9 +95,20 @@ def inject_auth_template_values():
     return {"jwt_csrf_token": session.get("jwt_csrf_token", "")}
 
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
-app.config["UPLOAD_FOLDER"] = os.path.join(app.root_path, "static", "uploads")
+
+
+
+# Use a writable temporary folder on Vercel.
+# Keep the original upload folder for local development.
+if os.environ.get("VERCEL"):
+    app.config["UPLOAD_FOLDER"] = "/tmp/stockwise_uploads"
+else:
+    app.config["UPLOAD_FOLDER"] = os.path.join(
+        app.root_path, "static", "uploads"
+    )
 
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+
 
 database_url = os.environ.get(
     "DATABASE_URL",
