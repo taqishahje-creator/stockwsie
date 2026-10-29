@@ -10,8 +10,6 @@ services:
       DATABASE_URL: "postgresql://inventory:inventorypass@db:5432/inventory"
       OLLAMA_URL: "http://host.docker.internal:11434"
       OLLAMA_MODEL: "qwen3:1.7b"
-    extra_hosts:
-      - "host.docker.internal:172.18.0.1"
     depends_on:
       db:
         condition: service_healthy

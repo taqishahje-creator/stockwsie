@@ -25,7 +25,11 @@ class InventoryAppTest(unittest.TestCase):
         driver.get(self.base_url)
 
         # Check the welcome page
-        self.assertIn("Your inventory. Under control.", driver.page_source)
+        heading = driver.find_element(By.TAG_NAME, "h1").text
+        self.assertEqual(
+            " ".join(heading.split()),
+            "Your inventory. Under control."
+        )
 
         # Open and check the login page
         driver.get(self.base_url + "/login")
